@@ -9,16 +9,16 @@ module PunyBlog
     def self.db ; @db ; end
     def self.app ; @app ; end
     
-    unless File.exists?("database.yml")
-      open("database.yml", "w") do |fp|
+    unless File.exists?("config/database.yml")
+      open("config/database.yml", "w") do |fp|
         fp.puts "---\n:adapter: mysql\n:host: db.example.com\n:database: my_blog\n:user: user\n:password: drowssap\n"
       end
       STDERR.puts "failed to find config"
-      @app = ErrorApp.new("No database configuration. Please edit database.yml")
+      @app = ErrorApp.new("No database configuration. Please edit config/database.yml")
     end
     
     begin
-      @db_config = YAML.load(IO.read("database.yml"))
+      @db_config = YAML.load(IO.read("config/database.yml"))
       @db = Sequel.connect @db_config.merge(
         logger: Logger.new($stderr)
       )
@@ -34,6 +34,7 @@ module PunyBlog
         String :title, :index => true, :null => false
         text   :content, :null => false
         Time   :created_at, :null => false
+        String :image, :null => true
       end unless @db.tables.include?(:posts)
       # @db.create_table(:settings, charset: 'utf8') do
       #   String :key,   :index => true,  :null => false
@@ -56,6 +57,19 @@ module PunyBlog
     end
     def_dataset_method(:recent) do
       reversed.limit(RECENT_LIMIT)
+    end
+    
+    def created_year
+      created_at.year
+    end
+    def created_month
+      Date::MONTHNAMES[created_at.month]
+    end
+    def created_day
+      created_at.day
+    end
+    def striped_month
+      created_month.sub(/(...)(.+)/, '\1<span>\2</span>')
     end
     
     def url_title

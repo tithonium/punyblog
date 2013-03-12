@@ -1,7 +1,72 @@
-<nav>
-<ul>
-{{#recent_posts}}
-<li><a href="{{url}}">{{title}}</a></li>
-{{/recent_posts}}
-</ul>
-</nav>
+{{! Sidebar }}
+<div id="sidebar">
+          
+  {{! Logo }}
+  <div id="logo">
+    <h1 class="mobileUI-site-name">{{site_title}}</h1>
+  </div>
+          
+  {{! Nav }}
+  <nav id="nav" class="mobileUI-site-nav">
+    <ul>
+      {{#pages}}
+        <li class="{{#current_page}}current_page_item{{/current_page}}"><a href="{{url}}">{{title}}</a></li>
+      {{/pages}}
+    </ul>
+  </nav>
+
+  {{! Search }}
+{{!
+  <section class="is-search is-first">
+    <form method="post" action="#">
+      <input type="text" class="text" name="search" placeholder="Search" />
+    </form>
+  </section>
+}}
+
+  {{! Text }}
+{{!
+  <section class="is-text-style1">
+    <div class="inner">
+      <p>
+        <strong>Striped:</strong> A free and fully responsive HTML5 site
+        template designed by <a href="http://n33.co/">AJ</a> for <a href="http://html5up.net/">HTML5 up!</a>
+      </p>
+    </div>
+  </section>
+}}
+
+  {{! Recent Posts }}
+{{#have_recent_posts}}
+  <section class="is-recent-posts">
+    <header>
+      <h2>Recent Posts</h2>
+    </header>
+    <ul>
+  {{#recent_posts}}
+      <li><a href="  {{url}}">  {{title}}</a></li>
+  {{/recent_posts}}
+    </ul>
+  </section>
+{{/have_recent_posts}}
+          
+{{#have_recent_comments}}
+  {{! Recent Comments }}
+  <section class="is-recent-comments">
+    <header>
+      <h2>Recent Comments</h2>
+    </header>
+    <ul>
+      <li>case on <a href="#">Now Full Cyborg</a></li>
+      <li>molly on <a href="#">Untitled Post</a></li>
+      <li>case on <a href="#">Temporal Flux</a></li>
+    </ul>
+  </section>
+{{/have_recent_comments}}
+  
+  {{>calendar}}
+  
+  {{>copyright}}
+  
+</div>
+
