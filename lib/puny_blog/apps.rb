@@ -1,4 +1,5 @@
 require 'mustache'
+require 'hashie/mash'
 
 module PunyBlog
   class ErrorApp
@@ -55,15 +56,18 @@ module PunyBlog
       end
     end
     
-    def status(v=nil); @status = v if v ; @status || 200; end
-    def type(v=nil); @type = v if v ; @type || 'text/html' ; end
+    def req; @request ||= Hashie::Mash.new; end
+    def reset_request; @request = nil ; end
+    
+    def status(v=nil); req.status = v if v ; req.status || 200; end
+    def type(v=nil); req.type = v if v ; req.type || 'text/html' ; end
     def output(v=nil)
-      @output ||= []
-      @output << v if v
-      @output.join("\n") unless v
+      req.output ||= []
+      req.output << v if v
+      req.output.join("\n") unless v
     end
     def raw_output(v)
-      @output = [v]
+      req.output = [v]
     end
     
     def render(view, attributes)
@@ -76,12 +80,12 @@ module PunyBlog
         {
           :url => '/',
           :title => 'Latest Posts',
-          :current_page => @current_page == :index
+          :current_page => req.current_page == :index
         },
         {
           :url => '/about',
           :title => 'About Me',
-          :current_page => @current_page == :about
+          :current_page => req.current_page == :about
         }
       ]
     end
@@ -106,47 +110,45 @@ module PunyBlog
     end
     
     def all_posts
-      @all_posts ||= PunyBlog::Post.reversed.all
+      req.all_posts ||= PunyBlog::Post.reversed.all
     end
     def recent_posts
-      @recent_posts ||= if @all_posts
-        @all_posts[0...PunyBlog::Post::RECENT_LIMIT]
+      req.recent_posts ||= if req.all_posts
+        req.all_posts[0...PunyBlog::Post::RECENT_LIMIT]
       else
         PunyBlog::Post.recent.all
       end
     end
     def current_post
-      @current_post ||= PunyBlog::Post[@current_post_id] if @current_post_id
-      @current_post ||= PunyBlog::Post[created_at: @current_post_date] if @current_post_date
+      req.current_post ||= PunyBlog::Post[req.current_post_id] if req.current_post_id
+      req.current_post ||= PunyBlog::Post[created_at: req.current_post_date] if req.current_post_date
     end
     
     def call(env)
-      # "PATH_INFO"=>"/asdfasdf"}
-      # "REQUEST_URI"=>"http://localhost:9393/asdfasdf?asdfads",
-      # "QUERY_STRING"=>"asdfads",
+      reset_request
       
       case env['PATH_INFO']
       when %r[^/?$]
-        @current_page = :index
+        req.current_page = :index
         output render(:index, posts: all_posts)
       when %r[^/(\d+)-[^/]+$]
-        @current_page = :post
+        req.current_page = :post
         # /1234-post-title-here
-        @current_post_id = $1
+        req.current_post_id = $1
         output render(:post, current_post)
       when %r[^/(\d{4})(\d{2})(\d{2})/(\d{2})(\d{2})(\d{2})/[^/]+$]
-        @current_page = :post
+        req.current_page = :post
         # /20130101/123456/post-title-here
-        @current_post_date = Time.utc($1, $2, $3, $4, $5, $6)
+        req.current_post_date = Time.utc($1, $2, $3, $4, $5, $6)
         output render(:post, current_post)
       when %r[^/about$]
-        @current_page = :about
+        req.current_page = :about
         5.times do
           output "<p>Your bones don't break, mine do. That's clear. Your cells react to bacteria and viruses differently than mine. You don't get sick, I do. That's also clear. But for some reason, you and I react the exact same way to water. We swallow it too fast, we choke. We get some in our lungs, we drown. However unreal it may seem, we are connected, you and I. We're on the same curve, just on opposite ends. </p>\n\n<p>Normally, both your asses would be dead as fucking fried chicken, but you happen to pull this shit while I'm in a transitional period so I don't wanna kill you, I wanna help you. But I can't give you this case, it don't belong to me. Besides, I've already been through too much shit this morning over this case to hand it over to your dumb ass. </p>
 \n<p>Do you see any Teletubbies in here? Do you see a slender plastic tag clipped to my shirt with my name printed on it? Do you see a little Asian child with a blank expression on his face sitting outside on a mechanical helicopter that shakes when you put quarters in it? No? Well, that's what you see at a toy store. And you must think you're in a toy store, because you're here shopping for an infant named Jeb. </p>"
 end
       when %r[^/debug$]
-        @current_page = :debug
+        req.current_page = :debug
         type 'text/plain'
         output "Hello world!"
         output env.inspect

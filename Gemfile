@@ -6,7 +6,7 @@ gem 'mustache'
 
 # gem 'yajl-ruby'
 # gem 'multi_json'
-# gem 'hashie'
+gem 'hashie'
 
 # gem 'whenever'
 # gem 'rack-contrib'
