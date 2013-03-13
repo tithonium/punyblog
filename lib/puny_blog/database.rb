@@ -40,11 +40,16 @@ module PunyBlog
           String :key,   :index => true,  :null => false, :primary_key => true
           String :value, :index => false, :null => false
         end
-        @db[:settings].insert(key: 'site_title', value: 'Name Of This Blog')
-        @db[:settings].insert(key: 'site_short_title', value: 'Blog')
-        @db[:settings].insert(key: 'site_owner', value: 'Your Name Here')
+        # @db[:settings].insert(key: 'site_title', value: 'Name Of This Blog')
+        # @db[:settings].insert(key: 'site_short_title', value: 'Blog')
+        # @db[:settings].insert(key: 'site_owner', value: 'Your Name Here')
+        @db[:settings].insert(key: 'site_title', value: 'Marty Angrily Rebukes Stupidity')
+        @db[:settings].insert(key: 'site_short_title', value: 'MARS')
+        @db[:settings].insert(key: 'site_owner', value: 'Martin Tithonium')
         @db[:settings].insert(key: 'items_per_page', value: '15')
         @db[:settings].insert(key: 'recent_items_count', value: '5')
+        require 'securerandom'
+        @db[:settings].insert(key: 'cookie_salt', value: SecureRandom.hex(32))
       end
       # unless @db[:settings][key: 'username'] && @db[:settings][key: 'password']
       #   STDERR.puts "Username and password need to be set. Until then, all users will be directed to the configuration page."

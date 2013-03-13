@@ -78,3 +78,49 @@ form#editor input[type=submit] {
   text-align: right;
   padding-right: 0.75em;
 }
+
+h1.empty-index {
+  font-size: 250%;
+  margin: 3em auto;
+  text-align: center;
+  line-height: 100%;
+}
+
+div.sartalic {
+  font-style: normal;
+  -webkit-transform: skew(20deg);
+  -moz-transform: skew(20deg);
+  -ms-transform: skew(20deg);
+  -o-transform: skew(20deg);
+  transform: skew(20deg);
+}
+
+.post-content i, .post-content em {
+  font-style: normal;
+}
+.post-content i:before, .post-content em:before {
+  content: '/';
+}
+.post-content i:after, .post-content em:after {
+  content: '/';
+}
+
+.post-content em.sartalic {
+  font-style: normal;
+}
+.post-content em.sartalic:before {
+  content: '\\';
+}
+.post-content em.sartalic:after {
+  content: '\\';
+}
+
+.post-content b, .post-content strong {
+  font-weight: normal;
+}
+.post-content b:before, .post-content strong:before {
+  content: '*';
+}
+.post-content b:after, .post-content strong:after {
+  content: '*';
+}

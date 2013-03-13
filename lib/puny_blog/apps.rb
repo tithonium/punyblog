@@ -1,6 +1,7 @@
 require 'mustache'
 require 'hashie/mash'
 require 'uri'
+require 'openssl'
 
 module PunyBlog
   class ErrorApp
@@ -90,7 +91,7 @@ module PunyBlog
     
     def status(v=nil); req.status = v if v ; req.status || 200; end
     def type(v=nil);   req.type = v if v   ; req.type || 'text/html' ; end
-
+    
     def cookie(key, value = nil, ttl = nil)
       ttl = -1 if value.nil?
       req.cookies[key.to_s] = { value: value, ttl: ttl }
@@ -117,9 +118,18 @@ module PunyBlog
       end
     end
     
+    def login_cookie
+      cookie_value = [
+        req.env['REMOTE_ADDR'],
+        Setting[:username]
+      ].join('-')
+      digest = OpenSSL::Digest::Digest.new('sha1')
+      OpenSSL::HMAC.hexdigest(digest, Setting[:cookie_salt], cookie_value)
+    end
+    
     def logged_in?
       return true unless secured?
-      !!cookies['logged_in']
+      cookies['login'] == login_cookie
     end
     
     def output(v=nil)
@@ -144,26 +154,26 @@ module PunyBlog
           :current_page => req.current_page == :index
         }
       ].tap do |p|
-        unless layout == :bare
-          p.concat [
-            {
-              :url => '/about',
-              :title => 'About Me',
-              :current_page => req.current_page == :about
-            }
-          ]
-        end
+        # unless layout == :bare
+        #   p.concat [
+        #     {
+        #       :url => '/about',
+        #       :title => 'About Me',
+        #       :current_page => req.current_page == :about
+        #     }
+        #   ]
+        # end
         if logged_in?
           p.concat [
-            {
-              :url => '/configuration',
-              :title => 'Configuration',
-              :current_page => req.current_page == :configuration
-            },
             {
               :url => '/post',
               :title => 'Post',
               :current_page => req.current_page == :new_post
+            },
+            {
+              :url => '/configuration',
+              :title => 'Configuration',
+              :current_page => req.current_page == :configuration
             },
             {
               :url => '/logout',
@@ -245,14 +255,17 @@ module PunyBlog
         offset = (req.page_num - 1) * limit
         req.all_posts_offset = offset
         req.all_posts_limit = limit
-        pagination = (1..req.page_count).collect do |p|
-          {
-            :num => p,
-            :url => p == 1 ? '/' : "/#{p}",
-            :current => p == req.page_num
-          }
+        pagination = if req.page_count > 1
+          (1..req.page_count).collect do |p|
+            {
+              :num => p,
+              :url => p == 1 ? '/' : "/#{p}",
+              :current => p == req.page_num
+            }
+          end
         end
-        output render(:index, posts: all_posts(offset, limit),
+        posts = all_posts(offset, limit)
+        output render(:index, posts: posts.any? ? posts : nil,
                               pagination: pagination,
                               previous_page: req.page_num > 1 ? (req.page_num == 2 ? '/' : "/#{req.page_num-1}") : nil,
                               next_page: req.page_num < req.page_count ? "/#{req.page_num+1}" : nil
@@ -263,23 +276,17 @@ module PunyBlog
         req.current_post_id = $1.to_i
         title "#{site_short_title} - #{current_post.title}"
         output render(:post, current_post)
-      # when %r[^/(\d{4})(\d{2})(\d{2})/(\d{2})(\d{2})(\d{2})/[^/]+$]
-      #   req.current_page = :post
-      #   # /20130101/123456/post-title-here
-      #   req.current_post_date = Time.utc($1, $2, $3, $4, $5, $6)
-      #   title "#{site_short_title} - #{current_post.title}"
-      #   output render(:post, current_post)
-      when %r[^/about$]
-        req.current_page = :about
-        title "About #{site_short_title}"
-        output "<p>Your bones don't break, mine do. That's clear. Your cells react to bacteria and viruses differently than mine. You don't get sick, I do. That's also clear. But for some reason, you and I react the exact same way to water. We swallow it too fast, we choke. We get some in our lungs, we drown. However unreal it may seem, we are connected, you and I. We're on the same curve, just on opposite ends. </p>\n\n<p>Normally, both your asses would be dead as fucking fried chicken, but you happen to pull this shit while I'm in a transitional period so I don't wanna kill you, I wanna help you. But I can't give you this case, it don't belong to me. Besides, I've already been through too much shit this morning over this case to hand it over to your dumb ass. </p>\n<p>Do you see any Teletubbies in here? Do you see a slender plastic tag clipped to my shirt with my name printed on it? Do you see a little Asian child with a blank expression on his face sitting outside on a mechanical helicopter that shakes when you put quarters in it? No? Well, that's what you see at a toy store. And you must think you're in a toy store, because you're here shopping for an infant named Jeb. </p>" * 2
+      # when %r[^/about$]
+      #   req.current_page = :about
+      #   title "About #{site_short_title}"
+      #   output "<p></p>"
       when %r[^/login$]
         req.current_page = :login
         if env['REQUEST_METHOD'] == 'POST'
           if post_params.username? || post_params.password?
             if post_params.username == Setting[:username] &&
                post_params.password == Setting[:password]
-              cookie(:logged_in, true, 3600)
+              cookie(:login, login_cookie, 3600)
               return redirect(post_params.destination || '/')
             else
               req.error = "Bad username or password"
@@ -292,7 +299,7 @@ module PunyBlog
         title "#{site_short_title} - Log in"
         output render(:login, error: req.error, warning: req.warning, notice: req.notice, destination: get_params.dest)
       when %r[^/logout$]
-        cookie(:logged_in, nil)
+        cookie(:login, nil)
         return redirect
       when %r[^/configuration$]
         return go_login unless logged_in?
