@@ -1,19 +1,23 @@
 {{#posts}}
-{{>post}}
+{{>post_summary}}
 {{/posts}}
 
 {{! Pager }}
-{{!
 <div class="pager">
-  <a href="#" class="button previous">Previous Page</a>
+{{#previous_page}}
+  <a href="{{previous_page}}" class="button previous">Previous Page</a>
+{{/previous_page}}
   <div class="pages">
-    <a href="#" class="active">1</a>
-    <a href="#">2</a>
-    <a href="#">3</a>
-    <a href="#">4</a>
+{{#pagination}}
+{{#url}}
+    <a href="{{url}}" class="{{#current}}active{{/current}}">{{num}}</a>
+{{/url}}
+{{^url}}
     <span>&hellip;</span>
-    <a href="#">20</a>
+{{/url}}
+{{/pagination}}
   </div>
-  <a href="#" class="button next">Next Page</a>
+{{#next_page}}
+  <a href="{{next_page}}" class="button next">Next Page</a>
+{{/next_page}}
 </div>
-}}

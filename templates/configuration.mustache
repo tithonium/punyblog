@@ -1,0 +1,8 @@
+<form id="configuration" method="post">
+  {{>flash}}
+  {{#settings}}
+  <label for="{{key}}">{{name}}</label>
+  <input type="text" name="{{key}}" id="{{key}}" autocapitalize="off" value="{{value}}">
+  {{/settings}}
+  <input type="submit" value="Save">
+</form>

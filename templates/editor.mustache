@@ -1,0 +1,9 @@
+<script>
+$(function(){$('#title').focus()})
+</script>
+<form id="editor" method="post">
+  {{>flash}}
+  <input type="text" id="title" name="title" placeholder="Title Goes Here" value="{{title}}">
+  <textarea id="body" name="body" placeholder="Body Goes Here">{{body}}</textarea>
+  <input type="submit" value="&#x21DB;">
+</form>

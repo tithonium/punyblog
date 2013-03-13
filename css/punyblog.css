@@ -1,0 +1,80 @@
+.notice {
+  color: #9a0;
+}
+.warning {
+  color: #cc0;
+}
+.error {
+  color: #a00;
+}
+
+form#login {
+  max-width: 350px;
+  margin: auto auto;
+}
+
+form#login .notice,
+form#login .warning,
+form#login .error {
+  display: block;
+  text-align: center;
+}
+
+form#editor input#title {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+form#editor textarea {
+  height: 25em;
+}
+
+form#editor input[type=submit],
+form#login input[type=submit] {
+  font-size: 30px;
+  padding: 0.125em 0.5em 0 0;
+  text-align: right;
+}
+form#editor input[type=submit] {
+  padding: 0em 0.5em 0.25em 0;
+}
+
+.is-mobile form#editor input[type=submit],
+.is-mobile form#login input[type=submit] {
+  font-size: 20px;
+}
+.is-mobile form#editor textarea {
+  height: 19em;
+}
+
+.is-desktop #logo {
+  cursor: pointer;
+}
+
+.is-desktop #content {
+}
+.is-desktop #sidebar {
+  padding-top: 1.75em;
+  min-height: 1350px;
+}
+
+.is-recent-posts li,
+.is-recent-comments li,
+#nav li {
+  padding: 0.25em 0 0.25em 0;
+}
+
+#logo {
+  background-color: #602bbd;
+}
+#logo h1 {
+  line-height: 1.1em;
+  text-align: left;
+  text-shadow: 0px 0px 5px rgba(0,0,0, 0.5);
+}
+#mobileUI-site-title {
+  font-size: 1.0em;
+  text-align: right;
+  padding-right: 0.75em;
+}

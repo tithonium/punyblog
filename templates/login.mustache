@@ -1,0 +1,12 @@
+<script>
+$(function(){$('#username').focus()})
+</script>
+<form id="login" method="post">
+  {{>flash}}
+{{#destination}}
+  <input type="hidden" name="destination" value="{{destination}}">
+{{/destination}}
+  <input type="text"     id="username" name="username" placeholder="username" autocapitalize="off">
+  <input type="password" id="password" name="password" placeholder="password">
+  <input type="submit"   value="&#x21AA;">
+</form>

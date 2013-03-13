@@ -9,7 +9,6 @@ set :repository,  "git@github.com:tithonium/punyblog.git"
 set :branch, "master"
 set :deploy_via, :remote_cache
 
-set :branch, 'master'
 role :app,  "sarin.midgard.org"
 role :web,  "sarin.midgard.org"
 role :db,   "sarin.midgard.org", :primary => true, :no_release => true

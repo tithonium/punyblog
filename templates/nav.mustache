@@ -5,7 +5,7 @@
   <div id="logo">
     <h1 class="mobileUI-site-name">{{site_title}}</h1>
   </div>
-          
+
   {{! Nav }}
   <nav id="nav" class="mobileUI-site-nav">
     <ul>
@@ -14,7 +14,8 @@
       {{/pages}}
     </ul>
   </nav>
-
+  
+{{^layout_bare}}
   {{! Search }}
 {{!
   <section class="is-search is-first">
@@ -23,7 +24,7 @@
     </form>
   </section>
 }}
-
+  
   {{! Text }}
 {{!
   <section class="is-text-style1">
@@ -35,7 +36,7 @@
     </div>
   </section>
 }}
-
+  
   {{! Recent Posts }}
 {{#have_recent_posts}}
   <section class="is-recent-posts">
@@ -44,7 +45,7 @@
     </header>
     <ul>
   {{#recent_posts}}
-      <li><a href="  {{url}}">  {{title}}</a></li>
+      <li><a href="{{url}}">{{title}}</a></li>
   {{/recent_posts}}
     </ul>
   </section>
@@ -67,6 +68,7 @@
   {{>calendar}}
   
   {{>copyright}}
+{{/layout_bare}}
   
 </div>
 
