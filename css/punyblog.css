@@ -124,3 +124,13 @@ div.sartalic {
 .post-content b:after, .post-content strong:after {
   content: '*';
 }
+
+.link-icon24-edit:before {
+  background-image: url('images/edit.png');
+  background-position: 0px 0px;
+}
+
+.link-icon24-feed:before {
+  background-image: url('images/feed.png');
+  background-position: 0px 0px;
+}

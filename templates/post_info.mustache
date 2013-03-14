@@ -6,7 +6,9 @@
   Oh, and if you don't need a date for a particular page or post you can simply delete
   the entire "date" element.
 }}
+{{#created_day}}
   <span class="date"><span class="month">{{{striped_month}}}</span> <span class="day">{{created_day}}</span><span class="year">, {{created_year}}</span></span>
+{{/created_day}}
 {{!
   Note: You can change the number of list items in "stats" to whatever you want.
 }}
@@ -17,5 +19,8 @@
     <li><a href="#" class="link-icon24 link-icon24-3">64</a></li>
     <li><a href="#" class="link-icon24 link-icon24-4">128</a></li>
     }}
+{{#editable}}
+    <li><a href="/edit/{{id}}" class="link-icon24 link-icon24-edit">edit</a></li>
+{{/editable}}
   </ul>
 </div>

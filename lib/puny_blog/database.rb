@@ -19,7 +19,7 @@ module PunyBlog
     
     begin
       @db_config = YAML.load(IO.read("config/database.yml"))
-      # @db_config[:logger] = Logger.new($stderr)
+      @db_config[:logger] = Logger.new($stderr)
       @db = Sequel.connect @db_config
       Sequel::Model.plugin :timestamps
     rescue => ex
@@ -35,6 +35,15 @@ module PunyBlog
         Time   :created_at, :null => false
         String :image, :null => true
       end unless @db.tables.include?(:posts)
+      
+      @db.create_table(:pages, charset: 'utf8') do
+        primary_key :id
+        String :url_id, :index => true, :null => false
+        String :title, :index => true, :null => false
+        text   :body, :null => false
+        Time   :created_at, :null => false
+      end unless @db.tables.include?(:pages)
+      
       unless @db.tables.include?(:settings)
         @db.create_table(:settings, charset: 'utf8') do
           String :key,   :index => true,  :null => false, :primary_key => true
@@ -78,22 +87,20 @@ module PunyBlog
     end
     
   end
-  class Post < Sequel::Model
-    def_dataset_method(:reversed) do
-      order(Sequel.desc(:created_at))
-    end
-    def_dataset_method(:recent) do
-      reversed.limit(Setting[:recent_items_count].to_i)
-    end
+  
+  module FormattedContent
+    attr_accessor :editable
     
     def content
       html = body
-      unless html =~ /</
+      unless html =~ /<(p|div|br)/
         html = '<p>' + html.gsub(/((\r?\n){2,})/, '</p>\1<p>') + '</p>'
       end
       unless html =~ /\A<(p|div)/
         html = html =~ /<(p|div|h\d)/ ? "<div>#{html}</div>" : "<p>#{html}</p>"
       end
+      html.gsub!(/<sar>/, '<em class="sartalic">')
+      html.gsub!(%r[</sar>], '</em>')
       html
     end
     
@@ -111,7 +118,44 @@ module PunyBlog
     end
     
     def url_title
-      title.gsub(/[,\."'`~!@#\$%\^&*\(\)_\+\[\]\{\}\\\|;:\<\>\/\?-]+/, '').split(/\W+/).join('-')
+      title.gsub(/([a-z])\.(?=[a-z])/i,'\1').gsub(/[,\."'`~!@#\$%\^&*\(\)_\+\[\]\{\}\\\|;:\<\>\/\?-]+/, '').split(/\W+/).join('-').downcase
+    end
+    
+    def full_url
+      "#{$site_root}#{url}"
+    end
+    
+  end
+  
+  class Page < Sequel::Model
+    include FormattedContent
+    
+    EditableFields = [:title, :body]
+    
+    def before_save
+      self.url_id = url_title
+    end
+    
+    def url
+      "/%s" % url_id
+    end
+    
+    def page_id
+      "page_#{url_id}".to_sym
+    end
+    
+  end
+  
+  class Post < Sequel::Model
+    include FormattedContent
+    
+    EditableFields = [:title, :body]
+    
+    def_dataset_method(:reversed) do
+      order(Sequel.desc(:created_at))
+    end
+    def_dataset_method(:recent) do
+      reversed.limit(Setting[:recent_items_count].to_i)
     end
     
     def url
@@ -119,10 +163,6 @@ module PunyBlog
       parts << id
       parts << url_title
       "/%4.4d/%2.2d/%2.2d/%d-%s" % parts
-    end
-    
-    def full_url
-      "#{$site_root}#{url}"
     end
     
   end

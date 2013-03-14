@@ -157,15 +157,15 @@ module PunyBlog
           :current_page => req.current_page == :index
         }
       ].tap do |p|
-        # unless layout == :bare
-        #   p.concat [
-        #     {
-        #       :url => '/about',
-        #       :title => 'About Me',
-        #       :current_page => req.current_page == :about
-        #     }
-        #   ]
-        # end
+        unless layout == :bare
+          p.concat(Page.all.collect do |page|
+            {
+              :url => page.url,
+              :title => page.title,
+              :current_page => req.current_page == page.page_id
+            }
+          end)
+        end
         if logged_in?
           p.concat [
             {
@@ -224,7 +224,7 @@ module PunyBlog
       req.all_posts_offset = offset
       req.all_posts_limit = limit
       req.first_page = offset == 0 && limit == Setting[:items_per_page].to_i
-      req.all_posts ||= PunyBlog::Post.reversed.limit(limit, offset).all
+      req.all_posts ||= PunyBlog::Post.reversed.limit(limit, offset).all.each{|p| p.editable = logged_in?}
     end
     def recent_posts
       req.recent_posts ||= if req.all_posts && req.first_page
@@ -240,7 +240,7 @@ module PunyBlog
         elsif req.current_post_date
           PunyBlog::Post[created_at: req.current_post_date]
         end
-      end
+      end.tap{|p| p.editable = logged_in?}
     end
     
     def call(env)
@@ -257,8 +257,6 @@ module PunyBlog
         limit = Setting[:items_per_page].to_i
         req.page_count = (req.post_count / limit.to_f).ceil.to_i
         offset = (req.page_num - 1) * limit
-        req.all_posts_offset = offset
-        req.all_posts_limit = limit
         pagination = if req.page_count > 1
           (1..req.page_count).collect do |p|
             {
@@ -352,20 +350,49 @@ module PunyBlog
         title "#{site_short_title} - Configuration"
         settings = valid_settings.collect{|k| Setting.for(k) }
         output render(:configuration, settings: settings, error: req.error, warning: req.warning, notice: req.notice)
-      when %r[^/post$]
+      when %r[^/post$], %r[^/edit/(\d+)$]
         return go_login unless logged_in?
+        post_id = $1.to_i if $1
+        post = Post[id: post_id] if post_id
+        return(redirect) if post_id && !post
+        post_fields = {}
+        Post::EditableFields.each.with_object(post_fields){|k,h| h[k] = post[k] } if post
         if env['REQUEST_METHOD'] == 'POST'
           begin
-            post = Post.create([:title, :body].each.with_object({}){|k,h| h[k] = post_params[k] })
+            Post::EditableFields.each.with_object(post_fields){|k,h| h[k] = post_params[k] }
+            post.update(post_fields) if post
+            post = Post.create(post_fields) unless post
             return redirect(post.url)
           rescue => ex
             req.error = "Failed to save: #{ex.message}"
           end
         end
-        req.current_page = :new_post
+        req.current_page = post_id ? :edit_post : :new_post
         req.layout = :bare
-        title "#{site_short_title} - New Post"
-        output render(:editor, error: req.error, warning: req.warning, notice: req.notice)
+        title "#{site_short_title} - #{post_id ? 'Edit' : 'New'} Post"
+        output render(:editor, post_fields.merge(error: req.error, warning: req.warning, notice: req.notice))
+      when %r[^/pages$]
+      when %r[^/page/?(\d+)?$]
+        return go_login unless logged_in?
+        page_id = $1.to_i if $1
+        page = Page[id: page_id] if page_id
+        return(redirect) if page_id && !page
+        page_fields = {}
+        Page::EditableFields.each.with_object(page_fields){|k,h| h[k] = page[k] } if page
+        if env['REQUEST_METHOD'] == 'POST'
+          begin
+            Page::EditableFields.each.with_object(page_fields){|k,h| h[k] = post_params[k] }
+            page.update(page_fields) if page
+            page = Page.create(page_fields) unless page
+            return redirect(page.url)
+          rescue => ex
+            req.error = "Failed to save: #{ex.message} at #{ex.backtrace.first}"
+          end
+        end
+        req.current_page = page_id ? :edit_page : :new_page
+        req.layout = :bare
+        title "#{site_short_title} - #{page_id ? 'Edit' : 'New'} Page"
+        output render(:editor, page_fields.merge(error: req.error, warning: req.warning, notice: req.notice))
       when %r[^/debug$]
         req.current_page = :debug
         type 'text/plain'
@@ -378,6 +405,10 @@ module PunyBlog
         if File.exists?(filename)
           type mime_type(filename)
           raw_output(IO.read(filename))
+        elsif page = Page[url_id: filename]
+          page.editable = logged_in?
+          req.current_page = page.page_id
+          output render(:page, page)
         else
           title "#{site_short_title} - Page Not Found"
           output "<h1>Not Found</h1>"

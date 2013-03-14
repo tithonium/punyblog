@@ -1,0 +1,14 @@
+{{! Page }}
+<article class="is-post">
+  {{>post_header}}
+{{#editable}}
+  <div class="info">
+    <ul class="stats">
+      <li><a href="/page/{{id}}" class="link-icon24 link-icon24-edit">edit</a></li>
+    </ul>
+  </div>
+{{/editable}}
+  <div class="post-content">
+  {{{content}}}
+  </div>
+</article>
