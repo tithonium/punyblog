@@ -85,6 +85,9 @@ module PunyBlog
     def site_title; "Marty Angrily Rebukes Stupidity"; end
     def site_short_title; "MARS"; end
     def site_owner; "Martin Tithonium"; end
+    def copyright_year
+      "2013-#{Time.now.year}".sub(/^(\d+)-\1$/, '\1')
+    end
     
     def title(v=nil);  req.title = v if v  ; req.title || site_title; end
     def layout(v=nil); req.layout = v if v ; req.layout || :layout; end
@@ -204,10 +207,11 @@ module PunyBlog
                 body: output,
                 site_title: site_title,
                 page_title: title,
+                site_root: $site_root,
                 recent_posts: recent_posts,
                 have_recent_posts: recent_posts.any?,
                 have_recent_comments: false,
-                copyright_year: "2013-#{Time.now.year}".sub(/^(\d+)-\1$/, '\1'),
+                copyright_year: copyright_year,
                 copyright_owner: site_owner,
                 pages: pages,
                )]
@@ -240,7 +244,7 @@ module PunyBlog
     end
     
     def call(env)
-      $site_root = "http://#{env['HTTP_HOST']}"
+      $site_root ||= "http://#{env['HTTP_HOST']}"
       start_time = Time.now
       reset_request(env)
       cookie(:last_request, Time.now.to_f)
@@ -270,6 +274,28 @@ module PunyBlog
                               previous_page: req.page_num > 1 ? (req.page_num == 2 ? '/' : "/#{req.page_num-1}") : nil,
                               next_page: req.page_num < req.page_count ? "/#{req.page_num+1}" : nil
                      )
+      when %r[^/(rss|atom)$]
+        req.current_page = :feed
+        req.feed_format = $1.to_sym
+        type "application/#{req.feed_format}+xml"
+        feed = {
+          title: site_title,
+          link: $site_root,
+          language: "en",
+          copyright_info: "Copyright #{copyright_year} #{site_owner}.",
+          pub_date: Time.now.to_s,
+          last_build_date: Time.now.to_s,
+          items: all_posts(0, 25).collect do |post|
+            {
+              title: post.title,
+              content: post.content,
+              link: post.full_url,
+              pub_date: post.created_at.to_s,
+              author: site_owner
+            }
+          end
+        }
+        output render(req.feed_format, feed: feed)
       when %r[^/\d{4}/\d{2}/\d{2}/(\d+)-[^/]+$]
         req.current_page = :post
         # /1234-post-title-here
