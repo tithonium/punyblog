@@ -19,7 +19,7 @@ GEM
     net-ssh (2.6.6)
     net-ssh-gateway (1.2.0)
       net-ssh (>= 2.6.5)
-    rack (1.6.12)
+    rack (2.1.4)
     raindrops (0.10.0)
     sequel (3.45.0)
     shotgun (0.9)
